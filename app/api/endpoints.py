@@ -1,11 +1,12 @@
+"""REST API-эндпоинты для управления источниками, новостями, постами и задачами."""
+
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.ai.generator import generate_post
-from app.telegram.publisher import publish_post
 
+from app.ai.generator import generate_post
 from app.api.schemas import (
     GenerateRequest,
     GenerateResponse,
@@ -24,33 +25,45 @@ from app.api.schemas import (
     TaskResponse,
 )
 from app.models import Keyword, NewsItem, Post, PostStatus, Source
-from app.utils import get_db, matches_keywords
-from app.tasks import run_pipeline_task
 from app.news_parser.sites import parse_rss
 from app.news_parser.telegram import parse_tg_channel
+from app.tasks import run_pipeline_task
+from app.telegram.publisher import publish_post
+from app.utils import get_db, matches_keywords
 
 router = APIRouter(tags=["Sources"])
 
+
 @router.get("/sources", response_model=list[SourceRead], tags=["Sources"])
-async def list_sources(db: AsyncSession = Depends(get_db)):
+async def list_sources(db: AsyncSession = Depends(get_db)) -> list[Source]:
+    """Возвращает список источников новостей."""
     result = await db.execute(select(Source).order_by(Source.created_at.desc()))
-    return result.scalars().all()
+    return list(result.scalars().all())
+
 
 @router.get("/sources/{source_id}", response_model=SourceRead, tags=["Sources"])
 async def get_source(
     source_id: str,
     db: AsyncSession = Depends(get_db),
-):
+) -> Source:
+    """Возвращает источник новостей по идентификатору."""
     source = await db.get(Source, source_id)
     if not source:
         raise HTTPException(status_code=404, detail="Source not found")
     return source
 
-@router.post("/sources", response_model=SourceRead, status_code=status.HTTP_201_CREATED, tags=["Sources"],)
+
+@router.post(
+    "/sources",
+    response_model=SourceRead,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Sources"],
+)
 async def create_source(
     payload: SourceCreate,
     db: AsyncSession = Depends(get_db),
-):
+) -> Source:
+    """Создаёт новый источник новостей."""
     source = Source(**payload.model_dump())
     db.add(source)
     await db.commit()
@@ -59,10 +72,12 @@ async def create_source(
 
 @router.patch("/sources/{source_id}", response_model=SourceRead, tags=["Sources"])
 async def update_source(
+
     source_id: str,
     payload: SourceUpdate,
     db: AsyncSession = Depends(get_db),
-):
+)-> Source:
+    """Обновляет источник новостей."""
     source = await db.get(Source, source_id)
     if not source:
         raise HTTPException(status_code=404, detail="Source not found")
@@ -83,7 +98,8 @@ async def update_source(
 async def delete_source(
     source_id: str,
     db: AsyncSession = Depends(get_db),
-):
+)-> None:
+    """Удаляет источник новостей."""
     source = await db.get(Source, source_id)
     if not source:
         raise HTTPException(status_code=404, detail="Source not found")
@@ -94,7 +110,8 @@ async def delete_source(
 
 
 @router.get("/keywords", response_model=list[KeywordRead], tags=["Keywords"])
-async def list_keywords(db: AsyncSession = Depends(get_db)):
+async def list_keywords(db: AsyncSession = Depends(get_db))-> list[Keyword]:
+    """Возвращает список ключевых слов."""
     result = await db.execute(select(Keyword).order_by(Keyword.created_at.desc()))
     return result.scalars().all()
 
@@ -103,7 +120,8 @@ async def list_keywords(db: AsyncSession = Depends(get_db)):
 async def get_keyword(
     keyword_id: str,
     db: AsyncSession = Depends(get_db),
-):
+)-> Keyword:
+    """Возвращает ключевое слово по идентификатору."""
     keyword = await db.get(Keyword, keyword_id)
     if not keyword:
         raise HTTPException(status_code=404, detail="Keyword not found")
@@ -119,7 +137,8 @@ async def get_keyword(
 async def create_keyword(
     payload: KeywordCreate,
     db: AsyncSession = Depends(get_db),
-):
+)-> Keyword:
+    """Создаёт новое ключевое слово."""
     keyword = Keyword(**payload.model_dump())
     db.add(keyword)
 
@@ -140,7 +159,8 @@ async def update_keyword(
     keyword_id: str,
     payload: KeywordUpdate,
     db: AsyncSession = Depends(get_db),
-):
+)-> Keyword:
+    """Обновляет ключевое слово."""
     keyword = await db.get(Keyword, keyword_id)
     if not keyword:
         raise HTTPException(status_code=404, detail="Keyword not found")
@@ -171,7 +191,8 @@ async def update_keyword(
 async def delete_keyword(
     keyword_id: str,
     db: AsyncSession = Depends(get_db),
-):
+)-> None:
+    """Удаляет ключевое слово."""
     keyword = await db.get(Keyword,keyword_id)
     if not keyword:
         raise HTTPException(status_code=404, detail="Keyword not found")
@@ -182,7 +203,8 @@ async def delete_keyword(
 
 
 @router.get("/news", response_model=list[NewsItemRead], tags=["News"])
-async def list_news(db: AsyncSession = Depends(get_db)):
+async def list_news(db: AsyncSession = Depends(get_db))-> list[NewsItem]:
+    """Возвращает список новостей."""
     result = await db.execute(select(NewsItem).order_by(NewsItem.created_at.desc()))
     return result.scalars().all()
 
@@ -191,7 +213,8 @@ async def list_news(db: AsyncSession = Depends(get_db)):
 async def get_news_item(
     news_id: str,
     db: AsyncSession = Depends(get_db),
-):
+)-> NewsItem:
+    """Возвращает новость по идентификатору."""
     news_item = await db.get(NewsItem, news_id)
     if not news_item:
         raise HTTPException(status_code=404, detail="News item not found")
@@ -199,7 +222,8 @@ async def get_news_item(
 
 
 @router.get("/posts", response_model=list[PostRead], tags=["Posts"])
-async def list_posts(db: AsyncSession = Depends(get_db)):
+async def list_posts(db: AsyncSession = Depends(get_db))-> list[Post]:
+    """Возвращает список сгенерированных постов."""
     result = await db.execute(select(Post).order_by(Post.created_at.desc()))
     return result.scalars().all()
 
@@ -208,7 +232,8 @@ async def list_posts(db: AsyncSession = Depends(get_db)):
 async def get_post(
         post_id: str,
         db: AsyncSession = Depends(get_db),
-):
+)-> Post:
+    """Возвращает пост по идентификатору."""
     post = await db.get(Post, post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
@@ -219,7 +244,8 @@ async def get_post(
 async def generate_post_from_news(
     news_id: str,
     db: AsyncSession = Depends(get_db),
-):
+)-> Post:
+    """Генерирует пост для выбранной новости."""
     news_item = await db.get(NewsItem, news_id)
 
     if not news_item:
@@ -261,7 +287,8 @@ async def generate_post_from_news(
 async def publish_generated_post(
     post_id: str,
     db: AsyncSession = Depends(get_db),
-):
+)-> Post:
+    """Публикует сгенерированный пост в Telegram."""
     post = await db.get(Post, post_id)
 
     if not post:
@@ -296,13 +323,15 @@ async def publish_generated_post(
 
 
 @router.post("/generate", response_model=GenerateResponse, tags=["AI"])
-async def generate_manually(payload: GenerateRequest):
+async def generate_manually(payload: GenerateRequest)-> GenerateResponse:
+    """Генерирует пост по переданному тексту."""
     generated_text = await generate_post(payload.text)
     return GenerateResponse(generated_text=generated_text)
 
 
 @router.post("/parse/rss", response_model=list[ParsedNewsItem], tags=["Parsers"])
-async def parse_rss_manually(payload: ParseRssRequest):
+async def parse_rss_manually(payload: ParseRssRequest)-> list[ParsedNewsItem]:
+    """Парсит RSS-ленту без сохранения новостей."""
     news_items = await parse_rss(payload.url)
     return news_items[:10]
 
@@ -311,7 +340,8 @@ async def parse_rss_manually(payload: ParseRssRequest):
 async def parse_rss_and_save(
     payload: ParseRssRequest,
     db: AsyncSession = Depends(get_db),
-):
+)-> ParseSaveResponse:
+    """Парсит RSS-ленту и сохраняет новые новости."""
     news_items = await parse_rss(payload.url)
 
     keywords_result = await db.execute(
@@ -362,13 +392,15 @@ async def parse_rss_and_save(
 
 
 @router.post("/parse/telegram", response_model=list[ParsedNewsItem], tags=["Parsers"])
-async def parse_telegram_manually(payload: ParseTelegramRequest):
+async def parse_telegram_manually(payload: ParseTelegramRequest)-> list[ParsedNewsItem]:
+    """Парсит Telegram-канал без сохранения новостей."""
     news_items = await parse_tg_channel(payload.username)
     return news_items[:10]
 
 
 @router.post("/tasks/run-pipeline", response_model=TaskResponse, tags=["Tasks"])
-async def run_pipeline():
+async def run_pipeline()-> TaskResponse:
+    """Ставит полный пайплайн обработки новостей в очередь."""
     task = run_pipeline_task.delay()
 
     return TaskResponse(

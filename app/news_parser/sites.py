@@ -1,15 +1,15 @@
-# Занятие 2: RSS и HTTP парсинг сайтов
-# TODO: реализовать parse_rss() и parse_site()
+"""Парсер RSS- и Atom-лент новостных сайтов."""
+
 from datetime import datetime
+from typing import Any
 
 import feedparser
 
+from app.news_parser.types import ParsedNewsItem
 
-def _parse_datetime(entry) -> datetime:
-    """
-    Достаём дату публикации из RSS-записи.
-    Если даты нет — ставим текущую дату.
-    """
+
+def _parse_datetime(entry: Any) -> datetime:
+    """Возвращает дату публикации RSS-записи или текущее время."""
     if hasattr(entry, "published_parsed") and entry.published_parsed:
         return datetime(*entry.published_parsed[:6])
 
@@ -19,16 +19,11 @@ def _parse_datetime(entry) -> datetime:
     return datetime.utcnow()
 
 
-async def parse_rss(url: str) -> list[dict]:
-    """
-    Парсинг RSS/Atom-ленты.
-
-    На вход получает URL RSS-ленты.
-    На выход возвращает список словарей с новостями.
-    """
+async def parse_rss(url: str) -> list[ParsedNewsItem]:
+    """Парсит RSS/Atom-ленту и возвращает список найденных новостей."""
     feed = feedparser.parse(url)
 
-    news_items = []
+    news_items: list[ParsedNewsItem] = []
 
     for entry in feed.entries:
         title = entry.get("title", "").strip()

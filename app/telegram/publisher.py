@@ -1,3 +1,5 @@
+"""Публикация сгенерированных постов в Telegram-канал."""
+
 from aiogram import Bot
 from loguru import logger
 
@@ -5,13 +7,7 @@ from app.config import settings
 
 
 async def publish_post(text: str) -> bool:
-    """
-    Публикует текстовый пост в Telegram-канал через Bot API.
-
-    Для работы нужны переменные окружения:
-    BOT_TOKEN — токен бота от @BotFather
-    TG_CHANNEL — username канала, например @my_channel
-    """
+    """Публикует текстовый пост в Telegram-канал через Bot API."""
     if not settings.bot_token:
         logger.error("BOT_TOKEN is not set")
         raise ValueError("BOT_TOKEN is not set")
@@ -28,11 +24,11 @@ async def publish_post(text: str) -> bool:
             text=text,
             disable_web_page_preview=False,
         )
-        logger.info(f"Post published to Telegram channel: {settings.tg_channel}")
+        logger.info("Post published to Telegram channel: {}", settings.tg_channel)
         return True
 
     except Exception as error:
-        logger.exception(f"Telegram publishing failed: {error}")
+        logger.exception("Telegram publishing failed: {}", error)
         raise
 
     finally:

@@ -1,4 +1,8 @@
+"""Точка входа FastAPI-приложения."""
+
 from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator
+
 from fastapi import FastAPI
 from loguru import logger
 
@@ -8,16 +12,14 @@ from app.utils import init_db
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Что запускается при старте и остановке сервера"""
-    # --- startup ---
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    """Инициализирует приложение при старте и логирует остановку сервера."""
     logger.info("AIBot starting up...")
     await init_db()
     logger.info("AIBot is ready!")
 
-    yield  # здесь сервер работает
+    yield
 
-    # --- shutdown ---
     logger.info("AIBot shutting down...")
 
 
@@ -34,7 +36,8 @@ app = FastAPI(
 
 
 @app.get("/", tags=["Health"])
-async def root():
+async def root() -> dict[str, str]:
+    """Возвращает краткую информацию о состоянии сервиса."""
     return {
         "service": "AIBot",
         "status": "running",
@@ -43,7 +46,9 @@ async def root():
 
 
 @app.get("/health", tags=["Health"])
-async def health_check():
+async def health_check() -> dict[str, str]:
+    """Возвращает статус доступности сервиса."""
     return {"status": "healthy"}
+
 
 app.include_router(api_router, prefix="/api")

@@ -1,3 +1,5 @@
+"""Настройка Celery-приложения и расписания фоновых задач."""
+
 from celery import Celery
 
 from app.config import settings

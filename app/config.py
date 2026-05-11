@@ -1,34 +1,30 @@
-"""Настройки проекта."""
+"""Настройки приложения, загружаемые из переменных окружения."""
+
+from functools import lru_cache
 
 from pydantic_settings import BaseSettings
-from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    """Класс настроек."""
-    # База данных
+    """Конфигурация приложения."""
+
     database_url: str = "sqlite+aiosqlite:///./aibot.db"
-
-    # Redis / Celery
     redis_url: str = "redis://localhost:6379/0"
-
-    # Telegram Bot
     bot_token: str = ""
     tg_channel: str = ""
-
-    # ChatGPT
     chatgpt_api_key: str = ""
-
-    # Приложение
     debug: bool = False
     log_level: str = "INFO"
 
     class Config:
+        """Настройки загрузки переменных окружения."""
+
         env_file = ".env"
 
 
 @lru_cache()
 def get_settings() -> Settings:
+    """Возвращает кэшированный объект настроек приложения."""
     return Settings()
 
 

@@ -1,274 +1,124 @@
-\# AIBot — AI Telegram News Publisher
+# AIBot — AI Telegram News Publisher
 
+Сервис собирает новости из RSS-лент и публичных Telegram-каналов, фильтрует их по ключевым словам, генерирует Telegram-посты через AI и публикует их в канал.
 
+## Возможности
 
-AIBot — сервис для автоматического сбора новостей, генерации коротких AI-постов и публикации их в Telegram-канал.
+- парсинг RSS/Atom-лент;
+- парсинг публичных Telegram-каналов;
+- фильтрация новостей по ключевым словам;
+- защита от дублей;
+- генерация постов через OpenAI;
+- fallback-генерация без API-ключа;
+- публикация в Telegram-канал;
+- фоновые задачи через Celery и Redis;
+- REST API для управления источниками и ключевыми словами.
 
+## Стек
 
+- Python 3.13
+- FastAPI
+- SQLAlchemy
+- Celery
+- Redis
+- BeautifulSoup
+- OpenAI API
+- Aiogram
+- Docker
 
-Проект реализован на FastAPI, SQLAlchemy, Celery, Redis и Telegram Bot API.
+## Установка
+git clone <ссылка-на-репозиторий> cd aibot uv sync
 
 
+## Настройка окружения
 
-\## Возможности
+Скопируйте пример переменных окружения:
+cp .env.example .env
 
 
+Заполните значения:
+env 
+DATABASE_URL=sqlite+aiosqlite:///./aibot.db 
+REDIS_URL=redis://localhost:6379/0 
+BOT_TOKEN=your_bot_token 
+TG_CHANNEL=@your_channel_username 
+CHATGPT_API_KEY=your_openai_api_key 
+DEBUG=True 
+LOG_LEVEL=INF
 
-\- Сбор новостей из RSS-источников
 
-\- Сбор сообщений из публичных Telegram-каналов
+## Запуск без Docker
 
-\- Фильтрация новостей по ключевым словам
+### Запуск Redis
+redis-server
 
-\- Проверка дублей по URL или заголовку
 
-\- Генерация постов через AI
+### Запуск API
+run uvicorn app.main:app --reload
 
-\- Fallback-генерация без AI API
 
-\- Публикация постов в Telegram-канал
-
-\- Управление источниками через REST API
-
-\- Управление ключевыми словами через REST API
-
-\- Просмотр новостей и постов через API
-
-\- Запуск фонового pipeline через Celery
-
-\- Автоматический запуск pipeline каждые 30 минут через Celery Beat
-
-\- Swagger-документация
-
-
-
-\## Стек технологий
-
-
-
-\- Python 3.13
-
-\- FastAPI
-
-\- SQLAlchemy
-
-\- SQLite
-
-\- Pydantic Settings
-
-\- Celery
-
-\- Redis
-
-\- aiogram
-
-\- OpenAI API
-
-\- feedparser
-
-\- httpx
-
-\- BeautifulSoup4
-
-\- loguru
-
-
-
-\## Настройка окружения
-
-
-
-Создайте файл `.env` в корне проекта.
-
-
-
-Пример:
-
-
-
-env DATABASE\_URL=sqlite+aiosqlite:///./aibot.db REDIS\_URL=redis://localhost:6379/0
-
-BOT\_TOKEN=your\_telegram\_bot\_token TG\_CHANNEL=@your\_channel\_username
-
-CHATGPT\_API\_KEY=your\_openai\_api\_key
-
-DEBUG=false LOG\_LEVEL=INFO
-
-
-
-
-
-\### Описание переменных окружения
-
-
-
-| Переменная | Описание |
-
-|---|---|
-
-| `DATABASE\_URL` | URL базы данных |
-
-| `REDIS\_URL` | URL Redis для Celery |
-
-| `BOT\_TOKEN` | Токен Telegram-бота от BotFather |
-
-| `TG\_CHANNEL` | Username Telegram-канала |
-
-| `CHATGPT\_API\_KEY` | API-ключ OpenAI |
-
-| `DEBUG` | Режим отладки |
-
-| `LOG\_LEVEL` | Уровень логирования |
-
-
-
-Важно: файл `.env` нельзя добавлять в GitHub.
-
-
-
-\## Установка зависимостей
-
-
-
-Если используется `uv`:
-
-bash uv sync
-
-
-
-
-
-Если нужно установить отдельную зависимость:
-
-bash uv add package\_name
-
-
-
-
-
-\## Запуск Redis
-
-
-
-Через Docker:
-
-bash docker run -d --name aibot-redis -p 6379:6379 redis:7
-
-
-
-
-
-Если контейнер уже создан:
-
-bash docker start aibot-redis
-
-
-
-
-
-Проверить запущенные контейнеры:
-
-bash docker ps
-
-
-
-
-
-\## Запуск FastAPI
-
-bash uv run uvicorn app.main:app --reload
-
-
-
-
-
-После запуска API будет доступно по адресу:
-
+API будет доступен по адресу:
 http://127.0.0.1:8000
 
 
-
-
-
 Swagger-документация:
-
 http://127.0.0.1:8000/docs
 
 
+### Запуск Celery worker
+run celery -A celery_worker.celery_app worker --loglevel=info
 
 
-
-Health check:
-
-http://127.0.0.1:8000/health
+### Запуск Celery beat
+run celery -A celery_worker.celery_app beat --loglevel=info
 
 
+## Запуск через Docker
+docker compose up --build
 
 
+## Примеры API-запросов
 
-\## Запуск Celery worker
-
-
-
-На Windows нужно использовать `--pool=solo`:
-
-bash uv run celery -A celery\_worker.celery\_app worker --loglevel=info --pool=solo
+### Добавить RSS-источник
+http://127.0.0.1:8000/api/sources
+-H "Content-Type: application/json"
+-d '{ "name": "Example RSS", "type": "site", "url": "https://example.com/rss", "enabled": true }'
 
 
+### Добавить Telegram-источник
+http://127.0.0.1:8000/api/sources
+-H "Content-Type: application/json"
+-d '{ "name": "Telegram Channel", "type": "tg", "url": "@example_channel", "enabled": true }'
 
 
-
-Celery Beat запускает pipeline каждые 30 минут.
-
-
-
-\## Основные API endpoints
+### Добавить ключевое слово
+http://127.0.0.1:8000/api/keywords
+-H "Content-Type: application/json"
+-d '{ "word": "искусственный интеллект", "enabled": true }'
 
 
-
-\### Health check
-
-http GET / GET /health
+### Запустить полный пайплайн
+http://127.0.0.1:8000/api/tasks/run-pipeline
 
 
+### Сгенерировать пост вручную
+http://127.0.0.1:8000/api/generate
+-H "Content-Type: application/json"
+-d '{ "text": "Текст новости для генерации Telegram-поста" }'
 
 
+## Основные эндпоинты
 
-\### Источники новостей
-
-http GET /api/sources GET /api/sources/{source\_id} POST /api/sources PATCH /api/sources/{source\_id} DELETE /api/sources/{source\_id}
-
-
-
-
-
-Пример создания RSS-источника:
-
-json { "name": "Real Python", "type": "site", "url": "\[https://realpython.com/atom.xml](https://realpython.com/atom.xml)", "enabled": true }
-
-
-
-
-
-Пример создания Telegram-источника:
-
-json { "name": "Durov Telegram", "type": "tg", "url": "durov", "enabled": true }
-
-
-
-
-
-\### Ключевые слова
-
-http GET /api/keywords GET /api/keywords/{keyword\_id} POST /api/keywords PATCH /api/keywords/{keyword\_id} DELETE /api/keywords/{keyword\_id}
-
-
-
-
-
-
-
-
-
-
+| Метод | URL | Назначение |
+|---|---|---|
+| GET | `/api/sources` | список источников |
+| POST | `/api/sources` | создание источника |
+| PATCH | `/api/sources/{source_id}` | обновление источника |
+| DELETE | `/api/sources/{source_id}` | удаление источника |
+| GET | `/api/keywords` | список ключевых слов |
+| POST | `/api/keywords` | создание ключевого слова |
+| GET | `/api/news` | список новостей |
+| GET | `/api/posts` | список постов |
+| POST | `/api/generate` | ручная генерация поста |
+| POST | `/api/tasks/run-pipeline` | запуск фонового пайплайна |
 

@@ -1,13 +1,16 @@
+"""Парсер публичных Telegram-каналов через веб-страницу t.me/s."""
+
 from datetime import datetime
+from typing import Any
 
 import httpx
 from bs4 import BeautifulSoup
 
+from app.news_parser.types import ParsedNewsItem
+
 
 def _build_tg_url(username: str) -> str:
-    """
-    Приводит username или ссылку Telegram-канала к формату https://t.me/s/channel
-    """
+    """Преобразует username или ссылку Telegram-канала в URL веб-версии."""
     username = username.strip()
 
     if username.startswith("https://t.me/s/"):
@@ -22,11 +25,8 @@ def _build_tg_url(username: str) -> str:
     return f"https://t.me/s/{username}"
 
 
-def _parse_message_datetime(message) -> datetime:
-    """
-    Достаёт дату сообщения из HTML Telegram.
-    Если дата не найдена — ставит текущее время.
-    """
+def _parse_message_datetime(message: Any) -> datetime:
+    """Возвращает дату Telegram-сообщения из HTML или текущее время."""
     time_tag = message.select_one("time")
 
     if not time_tag:
@@ -45,12 +45,8 @@ def _parse_message_datetime(message) -> datetime:
         return datetime.utcnow()
 
 
-async def parse_tg_channel(username: str) -> list[dict]:
-    """
-    Парсинг публичного Telegram-канала через https://t.me/s/channelname.
-
-    Работает только с публичными каналами.
-    """
+async def parse_tg_channel(username: str) -> list[ParsedNewsItem]:
+    """Парсит публичный Telegram-канал и возвращает список сообщений."""
     url = _build_tg_url(username)
 
     async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
@@ -60,7 +56,7 @@ async def parse_tg_channel(username: str) -> list[dict]:
     soup = BeautifulSoup(response.text, "html.parser")
 
     messages = soup.select(".tgme_widget_message")
-    news_items = []
+    news_items: list[ParsedNewsItem] = []
 
     for message in messages:
         text_tag = message.select_one(".tgme_widget_message_text")
@@ -75,7 +71,6 @@ async def parse_tg_channel(username: str) -> list[dict]:
             continue
 
         message_url = link_tag.get("href") if link_tag else None
-
         title = text.split("\n", 1)[0]
 
         if len(title) > 150:

@@ -1,17 +1,13 @@
-# Занятие 3: генерация постов через Claude API
-from openai import AsyncOpenAI
+"""Генерация Telegram-постов на основе текста новости."""
+
 from loguru import logger
+from openai import AsyncOpenAI
 
 from app.config import settings
 
 
 async def generate_post(news_text: str) -> str:
-    """
-    Генерирует короткий Telegram-пост на основе текста новости.
-
-    Если API-ключ не указан, возвращает тестовый пост,
-    чтобы проект мог работать локально без внешнего AI API.
-    """
+    """Генерирует короткий Telegram-пост через OpenAI или fallback-логику."""
     if not settings.chatgpt_api_key:
         logger.warning("CHATGPT_API_KEY is not set. Using fallback generation.")
         return _generate_fallback_post(news_text)
@@ -54,17 +50,12 @@ async def generate_post(news_text: str) -> str:
         return generated_text.strip()
 
     except Exception as error:
-        logger.exception(f"AI generation failed: {error}")
+        logger.exception("AI generation failed: %s", error)
         return _generate_fallback_post(news_text)
 
 
 def _generate_fallback_post(news_text: str) -> str:
-    """
-    Запасная генерация без AI.
-
-    Нужна, чтобы проект не падал, если нет API-ключа
-    или OpenAI временно недоступен.
-    """
+    """Создаёт простой Telegram-пост без обращения к AI API."""
     short_text = news_text.strip()
 
     if len(short_text) > 500:
