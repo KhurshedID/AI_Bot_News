@@ -31,13 +31,14 @@
 git clone <ссылка-на-репозиторий>
 cd aibot
 uv sync
-
+```
 
 ## Настройка окружения
 
 Скопируйте пример переменных окружения:
+```bash
 cp .env.example .env
-
+```
 
 Заполните значения в файле .env:
 DATABASE_URL=sqlite+aiosqlite:///./aibot.db
@@ -52,76 +53,112 @@ LOG_LEVEL=INFO
 ## Запуск без Docker
 
 ### Запуск Redis
+```bash
 redis-server
-
+```
 
 ### Запуск API
+```bash
 uv run uvicorn app.main:app --reload
+```
 
 
 API будет доступен по адресу:
+```bash
 text [http://127.0.0.1:8000](http://127.0.0.1:8000)
+```
 
 
 Swagger-документация:
+```bash
 text [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+```
 
 
 ### Запуск Celery worker
+```bash
 uv run celery -A celery_worker.celery_app worker --loglevel=info
-
+```
 
 ### Запуск Celery beat
+```bash
 uv run celery -A celery_worker.celery_app beat --loglevel=info
-
+```
 
 ## Запуск через Docker
+```bash
 bash docker compose up --build
+```
 
 
 ## Примеры API-запросов
 
 ### Добавить RSS-источник
+```bash
 curl -X POST [http://127.0.0.1:8000/api/sources](http://127.0.0.1:8000/api/sources) \
-  -H "Content-Type: application/json" \
-  -d '{
+```  
+```bash  
+-H "Content-Type: application/json" \
+```  
+```bash  
+-d '{
     "name": "Example RSS",
     "type": "site",
     "url": "[https://example.com/rss](https://example.com/rss)",
     "enabled": true
   }'
+```  
 
 
 ### Добавить Telegram-источник
+```bash
 curl -X POST [http://127.0.0.1:8000/api/sources](http://127.0.0.1:8000/api/sources) \
+```
+```bash
   -H "Content-Type: application/json" \
+```
+```bash
   -d '{
     "name": "Telegram Channel",
     "type": "tg",
     "url": "@example_channel",
     "enabled": true
   }'
+```  
 
 
 ### Добавить ключевое слово
+```bash
 curl -X POST [http://127.0.0.1:8000/api/keywords](http://127.0.0.1:8000/api/keywords) \
+```
+```bash
   -H "Content-Type: application/json" \
+```
+```bash
   -d '{
     "word": "искусственный интеллект",
     "enabled": true
   }'
+```  
 
 
 ### Запустить полный пайплайн
+```bash
 curl -X POST [http://127.0.0.1:8000/api/tasks/run-pipeline](http://127.0.0.1:8000/api/tasks/run-pipeline)
-
+```
 
 ### Сгенерировать пост вручную
+```bash
 curl -X POST [http://127.0.0.1:8000/api/generate](http://127.0.0.1:8000/api/generate) \
+```
+```bash
   -H "Content-Type: application/json" \
+```
+```bash  
   -d '{
     "text": "Текст новости для генерации Telegram-поста"
   }'
+```
 
 
 ## Основные эндпоинты
