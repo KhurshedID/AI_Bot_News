@@ -27,82 +27,76 @@
 - Docker
 
 ## Установка
-git clone <ссылка-на-репозиторий> cd aibot uv sync
+bash git clone <ссылка-на-репозиторий> cd aibot uv sync
 
 
 ## Настройка окружения
 
 Скопируйте пример переменных окружения:
-cp .env.example .env
+bash cp .env.example .env
 
 
 Заполните значения:
-env 
-DATABASE_URL=sqlite+aiosqlite:///./aibot.db 
-REDIS_URL=redis://localhost:6379/0 
-BOT_TOKEN=your_bot_token 
-TG_CHANNEL=@your_channel_username 
-CHATGPT_API_KEY=your_openai_api_key 
-DEBUG=True 
-LOG_LEVEL=INF
+env DATABASE_URL=sqlite+aiosqlite:///./aibot.db REDIS_URL=redis://localhost:6379/0 BOT_TOKEN=your_bot_token TG_CHANNEL=@your_channel_username CHATGPT_API_KEY=your_openai_api_key DEBUG=True LOG_LEVEL=INFO
 
 
 ## Запуск без Docker
 
 ### Запуск Redis
-redis-server
+bash redis-server
 
 
 ### Запуск API
-run uvicorn app.main:app --reload
+bash uv run uvicorn app.main:app --reload
 
 
 API будет доступен по адресу:
-http://127.0.0.1:8000
+text [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 
 Swagger-документация:
-http://127.0.0.1:8000/docs
+text [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 
 ### Запуск Celery worker
-run celery -A celery_worker.celery_app worker --loglevel=info
+bash uv run celery -A celery_worker.celery_app worker --loglevel=info
 
 
 ### Запуск Celery beat
-run celery -A celery_worker.celery_app beat --loglevel=info
+bash uv run celery -A celery_worker.celery_app beat --loglevel=info
 
 
 ## Запуск через Docker
-docker compose up --build
+bash docker compose up --build
 
 
 ## Примеры API-запросов
 
 ### Добавить RSS-источник
 http://127.0.0.1:8000/api/sources
+bash curl -X POST [http://127.0.0.1:8000/api/sources](http://127.0.0.1:8000/api/sources)
 -H "Content-Type: application/json"
--d '{ "name": "Example RSS", "type": "site", "url": "https://example.com/rss", "enabled": true }'
+-d '{ "name": "Example RSS", "type": "site", "url": "[https://example.com/rss](https://example.com/rss)", "enabled": true }'
 
 
 ### Добавить Telegram-источник
-http://127.0.0.1:8000/api/sources
+bash curl -X POST [http://127.0.0.1:8000/api/sources](http://127.0.0.1:8000/api/sources)
 -H "Content-Type: application/json"
 -d '{ "name": "Telegram Channel", "type": "tg", "url": "@example_channel", "enabled": true }'
 
 
 ### Добавить ключевое слово
-http://127.0.0.1:8000/api/keywords
+bash curl -X POST [http://127.0.0.1:8000/api/keywords](http://127.0.0.1:8000/api/keywords)
 -H "Content-Type: application/json"
 -d '{ "word": "искусственный интеллект", "enabled": true }'
 
 
 ### Запустить полный пайплайн
-http://127.0.0.1:8000/api/tasks/run-pipeline
+bash curl -X POST [http://127.0.0.1:8000/api/tasks/run-pipeline](http://127.0.0.1:8000/api/tasks/run-pipeline)
 
 
 ### Сгенерировать пост вручную
-http://127.0.0.1:8000/api/generate
+bash curl -X POST [http://127.0.0.1:8000/api/generate](http://127.0.0.1:8000/api/generate)
 -H "Content-Type: application/json"
 -d '{ "text": "Текст новости для генерации Telegram-поста" }'
 
@@ -122,3 +116,6 @@ http://127.0.0.1:8000/api/generate
 | POST | `/api/generate` | ручная генерация поста |
 | POST | `/api/tasks/run-pipeline` | запуск фонового пайплайна |
 
+## Структура проекта
+
+text aibot/ ├── app/ │ ├── ai/ │ ├── api/ │ ├── news_parser/ │ ├── telegram/ │ ├── config.py │ ├── main.py │ ├── models.py │ ├── tasks.py │ └── utils.py ├── celery_worker.py ├── docker-compose.yml ├── Dockerfile ├── pyproject.toml └── README.md
